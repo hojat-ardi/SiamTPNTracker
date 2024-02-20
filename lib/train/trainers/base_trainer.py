@@ -4,7 +4,7 @@ import torch
 import traceback
 from lib.train.admin import multigpu
 from torch.utils.data.distributed import DistributedSampler
-
+import time
 
 class BaseTrainer:
     """Base trainer class. Contains functions for training and saving/loading checkpoints.
@@ -66,6 +66,9 @@ class BaseTrainer:
             load_latest - Bool indicating whether to resume from latest epoch.
             fail_safe - Bool indicating whether the training to automatically restart in case of any crashes.
         """
+        # Record the start time
+        start_time = time.time()
+        print("START TRAINING")
 
         epoch = -1
         num_tries = 1
@@ -103,6 +106,22 @@ class BaseTrainer:
                     print('Restarting training from last epoch ...')
                 else:
                     raise
+
+                                
+        # Record the end time
+        end_time = time.time()
+
+        # Calculate the total execution time in seconds
+        total_time = end_time - start_time
+
+        # Convert the time into hours, minutes, and seconds
+        hours = int(total_time // 3600)
+        minutes = int((total_time % 3600) // 60)
+        seconds = total_time % 60
+
+        # Print the execution time in hours, minutes, and seconds
+        print(f"Execution time: {hours} hours, {minutes} minutes, and {seconds:.2f} seconds")
+        
 
         print('Finished training!')
 
