@@ -59,7 +59,11 @@ class Got10k(BaseVideoDataset):
                 file_path = os.path.join(ltr_path, 'data_specs', 'got10k_vot_val_split.txt')
             else:
                 raise ValueError('Unknown split name.')
-            seq_ids = pandas.read_csv(file_path, header=None, squeeze=True, dtype=np.int64).values.tolist()
+            
+            # seq_ids = pandas.read_csv(file_path, header=None, squeeze=True, dtype=np.int64).values.tolist()
+            df = pandas.read_csv(file_path, header=None, dtype=np.int64)
+            seq_ids = df.iloc[:, 0].values.tolist() if df.shape[1] == 1 else df.values.tolist()
+            
         elif seq_ids is None:
             seq_ids = list(range(0, len(self.sequence_list)))
 
