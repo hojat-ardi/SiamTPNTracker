@@ -75,15 +75,15 @@ DATA:
     NUMBER: 1
   TRAIN:
     DATASETS_NAME:
-    - LASOT
+    # - LASOT
     - GOT10K_vottrain
-    - COCO17
-    - TRACKINGNET
+    # - COCO17
+    # - TRACKINGNET
     DATASETS_RATIO:
     - 1
-    - 1
-    - 1
-    - 1
+    # - 1
+    # - 1
+    # - 1
     SAMPLE_PER_EPOCH: 60000
 TEST:
   EPOCH: 100
