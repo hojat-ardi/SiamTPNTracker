@@ -115,6 +115,8 @@ def run_sequence(seq: Sequence, tracker: Tracker, debug=False, num_gpu=8):
             if seq.dataset in ['trackingnet', 'got10k']:
                 base_results_path = os.path.join(tracker.results_dir, seq.dataset, seq.name)
                 bbox_file = '{}.txt'.format(base_results_path)
+                print("bbox_file:", bbox_file)
+
             else:
                 bbox_file = '{}/{}.txt'.format(tracker.results_dir, seq.name)
             return os.path.isfile(bbox_file)

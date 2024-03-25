@@ -37,6 +37,12 @@ change the path in `lib/test/evaluation/local.py ` to your data location
 python tools/test.py siamtpn shufflenet_l345_192 --dataset_name got10k_val --debug 1 --cpu 1 --epoch 100 --sequence GOT-10k_Val_000001
 ```
 
+```
+# for save results, run without debug:
+
+python tools/test.py siamtpn shufflenet_l345_192 --dataset_name got10k_val --debug 0 --cpu 1 --epoch 100 --sequence GOT-10k_Val_000001
+```
+
 ### running on cpu with onnx optimized
 
 The debug mode will show tracking results, more details refer to tools/test.py

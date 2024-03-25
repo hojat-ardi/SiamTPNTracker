@@ -4,7 +4,7 @@ def local_env_settings():
     settings = EnvSettings()
 
     # Set your local paths here.
-    settings.got10k_path = ''
+    settings.got10k_path = '/home/ardi/Desktop/Dataset/GOT-10k/got-10k'
     settings.save_dir = './results/'
     settings.got_packed_results_path = './results/'
     settings.got_reports_path = './results/'
