@@ -76,8 +76,8 @@ DATA:
   TRAIN:
     DATASETS_NAME:
     # - LASOT
-    - GOT10K_vottrain
-    # - COCO17
+    - COCO17
+    # - GOT10K_vottrain
     # - TRACKINGNET
     DATASETS_RATIO:
     - 1
