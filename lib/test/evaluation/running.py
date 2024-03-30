@@ -24,8 +24,10 @@ def _save_tracker_output(seq: Sequence, tracker: Tracker, output: dict):
         base_results_path = os.path.join(tracker.results_dir, seq.name)
 
     def save_bb(file, data):
-        tracked_bb = np.array(data).astype(int)
-        np.savetxt(file, tracked_bb, delimiter='\t', fmt='%d')
+        print(data)
+        tracked_bb = np.array(data).astype(float)
+        # print(tracked_bb)
+        np.savetxt(file, tracked_bb, delimiter=',', fmt='%.2f')
 
     def save_time(file, data):
         exec_times = np.array(data).astype(float)
@@ -49,6 +51,8 @@ def _save_tracker_output(seq: Sequence, tracker: Tracker, output: dict):
         # If data is empty
         if not data:
             continue
+        # print(key)
+        # print(output)
 
         if key == 'target_bbox':
             if isinstance(data[0], (dict, OrderedDict)):
@@ -61,7 +65,6 @@ def _save_tracker_output(seq: Sequence, tracker: Tracker, output: dict):
                 # Single-object mode
                 bbox_file = '{}.txt'.format(base_results_path)
                 save_bb(bbox_file, data)
-
         if key == 'all_boxes':
             if isinstance(data[0], (dict, OrderedDict)):
                 data_dict = _convert_dict(data)
@@ -73,7 +76,6 @@ def _save_tracker_output(seq: Sequence, tracker: Tracker, output: dict):
                 # Single-object mode
                 bbox_file = '{}_all_boxes.txt'.format(base_results_path)
                 save_bb(bbox_file, data)
-
         if key == 'all_scores':
             if isinstance(data[0], (dict, OrderedDict)):
                 data_dict = _convert_dict(data)
@@ -87,7 +89,7 @@ def _save_tracker_output(seq: Sequence, tracker: Tracker, output: dict):
                 bbox_file = '{}_all_scores.txt'.format(base_results_path)
                 save_score(bbox_file, data)
 
-        elif key == 'time':
+        elif key == 'fps':
             if isinstance(data[0], dict):
                 data_dict = _convert_dict(data)
 
