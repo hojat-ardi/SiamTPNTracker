@@ -3,7 +3,7 @@ __pycache__/
 .vscode
 results
 external
-
+results_batch32
 # C extensions
 *.so
 
