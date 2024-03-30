@@ -24,7 +24,7 @@ def _save_tracker_output(seq: Sequence, tracker: Tracker, output: dict):
         base_results_path = os.path.join(tracker.results_dir, seq.name)
 
     def save_bb(file, data):
-        print(data)
+        # print(data)
         tracked_bb = np.array(data).astype(float)
         # print(tracked_bb)
         np.savetxt(file, tracked_bb, delimiter=',', fmt='%.2f')
