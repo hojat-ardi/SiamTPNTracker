@@ -65,23 +65,13 @@ pip install onnxruntime_openvino-1.9.0-cp37-cp37m-linux_x86_64.whl
 python tools/onnx_search.py
 python tools/onnx_template.py
 
-python tools/test.py siamtpn_onnx shufflenet_l345_192 --dataset_name uav --debug 1 --cpu 1 --epoch 100 
-
-# for save results, run any debug:
-python tools/test.py siamtpn_onnx shufflenet_l345_192 --dataset_name uav --debug 0 --cpu 1 --epoch 100
+python tools/test.py siamtpn_onnx shufflenet_l345_192 --dataset_name got10k_val --debug 1 --cpu 1 --epoch 100 --sequence GOT-10k_Val_000001
 ```
 
-<<<<<<< HEAD
-### analysis_results (got_test):
+### analysis_results
 
 ```
 python tools/analysis_results.py siamtpn shufflenet_l345_192
-=======
-## analysis results (uav_test):
-
-```
-python tools/analysis_results.py siamtpn shufflenet_l345_192 --dataset_name uav 
->>>>>>> uav_test
 ```
 
 ## Citation
