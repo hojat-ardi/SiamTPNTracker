@@ -40,6 +40,38 @@ class SiamTPN(nn.Module):
         
         return  self.head(test_feat, train_feat)
 
+# ------------------LINK TO /home/ardi/Desktop/project/SiamTPNTracker/model_detail.py ----------------------
+    # def forward(self, train_imgs, test_img):
+    #     print("Input Train Images Shape:", train_imgs.shape)
+    #     print("Input Test Image Shape:", test_img.shape)
+
+    #     train_feat = self.backbone(train_imgs)
+    #     if isinstance(train_feat, tuple):  # Checking if output is a tuple
+    #         train_feat = train_feat[0]  # Assuming we need the first element
+    #     print("Output Backbone Train Shape:", train_feat.shape)
+
+    #     test_feat = self.backbone(test_img)
+    #     if isinstance(test_feat, tuple):  # Checking if output is a tuple
+    #         test_feat = test_feat[0]  # Assuming we need the first element
+    #     print("Output Backbone Test Shape:", test_feat.shape)
+
+    #     train_feat = self.fpn(train_feat)
+    #     if isinstance(train_feat, tuple):
+    #         train_feat = train_feat[0]
+    #     print("Output FPN Train Shape:", train_feat.shape)
+
+    #     test_feat = self.fpn(test_feat)
+    #     if isinstance(test_feat, tuple):
+    #         test_feat = test_feat[0]
+    #     print("Output FPN Test Shape:", test_feat.shape)
+
+    #     final_output = self.head(test_feat, train_feat)
+    #     if isinstance(final_output, tuple):
+    #         final_output = final_output[0]
+    #     print("Output Head Shape:", final_output.shape)
+
+    #     return final_output
+    # ----------------------------------------------------------------------------------------
 
 def build_network(cfg):
     backbone = build_backbone(cfg)
