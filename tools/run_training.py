@@ -27,6 +27,32 @@ def init_seeds(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
+def save_model_details(model, filepath):
+    with open(filepath, 'w') as file:
+        file.write("Model Details:\n")
+        file.write("--------------------------------------------------------------------------------\n")
+        total_params = 0
+        total_trainable_params = 0
+        for name, parameter in model.named_parameters():
+            param = parameter.numel()
+            trainable = parameter.requires_grad
+            if trainable:
+                trainability = "Trainable"
+            else:
+                trainability = "Frozen"
+            file.write(f"{name:30} | Count: {param:10} | {trainability}\n")
+            total_params += param
+            if trainable:
+                total_trainable_params += param
+
+        file.write("--------------------------------------------------------------------------------\n")
+        file.write(f"Total parameters: {total_params}\n")
+        file.write(f"Trainable parameters: {total_trainable_params}\n")
+        file.write("--------------------------------------------------------------------------------\n")
+
+
+
+
 
 def run_training(config_name, cudnn_benchmark=True, local_rank=-1, save_dir=None, base_seed=None):
     """Run the train script.
@@ -85,6 +111,12 @@ def run_training(config_name, cudnn_benchmark=True, local_rank=-1, save_dir=None
     net = build_network(cfg)
     # wrap networks to distributed one
     net.cuda()
+
+    # Save detailed model information to a file
+    model_details_path = os.path.join(settings.save_dir, "model_details.txt")
+    if settings.local_rank in [-1, 0]:  # Save only in the main process
+        save_model_details(net, model_details_path)
+    
     if settings.local_rank != -1:
         net = DDP(net, device_ids=[settings.local_rank], find_unused_parameters=True)
         settings.device = torch.device("cuda:%d" % settings.local_rank)
