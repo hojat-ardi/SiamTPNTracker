@@ -97,80 +97,120 @@ class TrackingSampler(torch.utils.data.Dataset):
             TensorDict - dict containing all the data blocks
         """
         valid = False
-        while not valid:
-            # Select a dataset
-            dataset = random.choices(self.datasets, self.p_datasets)[0]
+        attempts = 0
+        max_attempts = 100  # حداکثر تعداد تلاش‌ها برای نمونه‌برداری
+        while not valid and attempts < max_attempts:
+            attempts += 1
+            try:
+                # Select a dataset
+                dataset = random.choices(self.datasets, self.p_datasets)[0]
 
-            is_video_dataset = dataset.is_video_sequence()
+                is_video_dataset = dataset.is_video_sequence()
 
-            # sample a sequence from the given dataset
-            seq_id, visible, seq_info_dict = self.sample_seq_from_dataset(dataset, is_video_dataset)
-            #print(seq_id, visible)
-            if is_video_dataset:
-                template_frame_ids = None
-                search_frame_ids = None
-                gap_increase = 0
+                # sample a sequence from the given dataset
+                seq_id, visible, seq_info_dict = self.sample_seq_from_dataset(dataset, is_video_dataset)
+                #print(seq_id, visible)
+                if is_video_dataset:
+                    template_frame_ids = None
+                    search_frame_ids = None
+                    gap_increase = 0
 
-                if self.frame_sample_mode == 'causal':
-                    # Sample test and train frames in a causal manner, i.e. search_frame_ids > template_frame_ids
-                    while search_frame_ids is None:
-                        base_frame_id = self._sample_visible_ids(visible, num_ids=1, min_id=self.num_template_frames - 1,
-                                                                 max_id=len(visible) - self.num_search_frames)
-                        prev_frame_ids = self._sample_visible_ids(visible, num_ids=self.num_template_frames - 1,
-                                                                  min_id=base_frame_id[0] - self.max_gap - gap_increase,
-                                                                  max_id=base_frame_id[0])
-                        if prev_frame_ids is None:
+                    if self.frame_sample_mode == 'causal':
+                        # Sample test and train frames in a causal manner, i.e. search_frame_ids > template_frame_ids
+                        while search_frame_ids is None:
+                            base_frame_id = self._sample_visible_ids(visible, num_ids=1, min_id=self.num_template_frames - 1,
+                                                                     max_id=len(visible) - self.num_search_frames)
+                            if base_frame_id is None or len(base_frame_id) == 0:
+                                print(f"Warning: Could not sample base_frame_id in sequence {seq_id}")
+                                break  # Break to re-sample a different sequence
+                            prev_frame_ids = self._sample_visible_ids(visible, num_ids=self.num_template_frames - 1,
+                                                                      min_id=base_frame_id[0] - self.max_gap - gap_increase,
+                                                                      max_id=base_frame_id[0])
+                            if prev_frame_ids is None:
+                                gap_increase += 5
+                                continue
+                            template_frame_ids = base_frame_id + prev_frame_ids
+                            search_frame_ids = self._sample_visible_ids(visible, min_id=template_frame_ids[0] + 1,
+                                                                      max_id=template_frame_ids[0] + self.max_gap + gap_increase,
+                                                                      num_ids=self.num_search_frames)
+                            # Increase gap until a frame is found
                             gap_increase += 5
-                            continue
-                        template_frame_ids = base_frame_id + prev_frame_ids
-                        search_frame_ids = self._sample_visible_ids(visible, min_id=template_frame_ids[0] + 1,
-                                                                  max_id=template_frame_ids[0] + self.max_gap + gap_increase,
-                                                                  num_ids=self.num_search_frames)
-                        # Increase gap until a frame is found
-                        gap_increase += 5
-                #print(template_frame_ids, search_frame_ids)
-            else:
-                # In case of image dataset, just repeat the image to generate synthetic video
-                template_frame_ids = [1] * self.num_template_frames
-                search_frame_ids = [1] * self.num_search_frames
-            #try:
-            template_frames, template_anno, meta_obj_train = dataset.get_frames(seq_id, template_frame_ids, seq_info_dict)
-            search_frames, search_anno, meta_obj_test = dataset.get_frames(seq_id, search_frame_ids, seq_info_dict)
-            #print('load images')
-            H, W, _ = template_frames[0].shape
-            #template_masks = template_anno['mask'] if 'mask' in template_anno else [torch.from_numpy(self._make_aabb_mask((H,W), box)) for box in template_anno['bbox']]
-            #search_masks = search_anno['mask'] if 'mask' in search_anno else [torch.from_numpy(self._make_aabb_mask((H,W), box)) for box in search_anno['bbox']]
+                else:
+                    # In case of image dataset, just repeat the image to generate synthetic video
+                    template_frame_ids = [1] * self.num_template_frames
+                    search_frame_ids = [1] * self.num_search_frames
 
-            data = TensorDict({'template_images': template_frames,
-                                'template_anno': template_anno['bbox'],
-                                #'template_masks': template_masks,
-                                'search_images': search_frames,
-                                'search_anno': search_anno['bbox'],
-                                #'search_masks': search_masks,
-                                'dataset': dataset.get_name(),
-                                #'test_class': meta_obj_test.get('object_class_name')
-                                })
-            # make data augmentation
-            data = self.processing(data)
+                # دریافت فریم‌ها
+                template_frames, template_anno, meta_obj_train = dataset.get_frames(seq_id, template_frame_ids, seq_info_dict)
+                search_frames, search_anno, meta_obj_test = dataset.get_frames(seq_id, search_frame_ids, seq_info_dict)
+                #print('load images')
 
-            # check whether data is valid
-            valid = data['valid']
-            #except:
-            #    valid = False
+                # بررسی فریم‌ها برای اطمینان از عدم وجود None
+                if template_frames is None or search_frames is None:
+                    print(f"Error: Received None for frames in sequence {seq_id}")
+                    continue  # تلاش برای نمونه‌برداری مجدد
+
+                # بررسی هر فریم به صورت جداگانه
+                invalid_frame = False
+                for idx, frame in enumerate(template_frames):
+                    if frame is None:
+                        print(f"Error: Template frame at index {template_frame_ids[idx]} is None in sequence {seq_id}")
+                        invalid_frame = True
+                        break
+
+                if invalid_frame:
+                    continue  
+
+                for idx, frame in enumerate(search_frames):
+                    if frame is None:
+                        print(f"Error: Search frame at index {search_frame_ids[idx]} is None in sequence {seq_id}")
+                        invalid_frame = True
+                        break
+
+                if invalid_frame:
+                    continue 
+
+                H, W, _ = template_frames[0].shape
+
+                data = TensorDict({
+                    'template_images': template_frames,
+                    'template_anno': template_anno['bbox'],
+                    # 'template_masks': template_masks,
+                    'search_images': search_frames,
+                    'search_anno': search_anno['bbox'],
+                    # 'search_masks': search_masks,
+                    'dataset': dataset.get_name(),
+                    # 'test_class': meta_obj_test.get('object_class_name')
+                })
+                data = self.processing(data)
+
+                # بررسی اعتبار داده‌ها
+                if 'valid' in data and data['valid']:
+                    valid = True
+                else:
+                    print(f"Warning: Invalid data found in sequence {seq_id}")
+                    valid = False
+
+            except Exception as e:
+                print(f"Exception encountered: {e}")
+                valid = False
+
+        if not valid:
+            raise RuntimeError("Failed to get a valid sample after multiple attempts")
 
         return data
 
     def _make_aabb_mask(self, map_shape, bbox):
         mask = np.zeros(map_shape, dtype=np.float32)
-        mask[int(round(bbox[1].item())):int(round(bbox[1].item() + bbox[3].item())), int(round(bbox[0].item())):int(round(bbox[0].item() + bbox[2].item()))] = 1
+        mask[int(round(bbox[1].item())):int(round(bbox[1].item() + bbox[3].item())),
+             int(round(bbox[0].item())):int(round(bbox[0].item() + bbox[2].item()))] = 1
         return mask
 
     def get_center_box(self, H, W, ratio=1/8):
-        cx, cy, w, h = W/2, H/2, W * ratio, H * ratio
-        return torch.tensor([int(cx-w/2), int(cy-h/2), int(w), int(h)])
+        cx, cy, w, h = W / 2, H / 2, W * ratio, H * ratio
+        return torch.tensor([int(cx - w / 2), int(cy - h / 2), int(w), int(h)])
 
     def sample_seq_from_dataset(self, dataset, is_video_dataset):
-
         # Sample a sequence with enough visible frames
         enough_visible_frames = False
         while not enough_visible_frames:
@@ -181,9 +221,13 @@ class TrackingSampler(torch.utils.data.Dataset):
             seq_info_dict = dataset.get_sequence_info(seq_id)
             visible = seq_info_dict['visible']
 
-            enough_visible_frames = visible.type(torch.int64).sum().item() > 2 * (
-                    self.num_search_frames + self.num_template_frames) and len(visible) >= 20
+            if is_video_dataset:
+                enough_visible_frames = visible.type(torch.int64).sum().item() > 2 * (
+                        self.num_search_frames + self.num_template_frames) and len(visible) >= 20
+            else:
+                enough_visible_frames = True  
 
-            enough_visible_frames = enough_visible_frames or not is_video_dataset
+            if not is_video_dataset:
+                break  
+
         return seq_id, visible, seq_info_dict
-

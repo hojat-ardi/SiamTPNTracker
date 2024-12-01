@@ -33,21 +33,21 @@ class LaSOTDataset(BaseDataset):
 
     def _construct_sequence(self, sequence_name):
         class_name = sequence_name.split('-')[0]
-        anno_path = '{}/{}/{}/groundtruth.txt'.format(self.base_path, class_name, sequence_name)
+        anno_path = '{}/{}/groundtruth.txt'.format(self.base_path, sequence_name)
 
         ground_truth_rect = load_text(str(anno_path), delimiter=',', dtype=np.float64)
 
-        occlusion_label_path = '{}/{}/{}/full_occlusion.txt'.format(self.base_path, class_name, sequence_name)
+        occlusion_label_path = '{}/{}/full_occlusion.txt'.format(self.base_path, sequence_name)
 
         # NOTE: pandas backed seems super super slow for loading occlusion/oov masks
         full_occlusion = load_text(str(occlusion_label_path), delimiter=',', dtype=np.float64, backend='numpy')
 
-        out_of_view_label_path = '{}/{}/{}/out_of_view.txt'.format(self.base_path, class_name, sequence_name)
+        out_of_view_label_path = '{}/{}/out_of_view.txt'.format(self.base_path, sequence_name)
         out_of_view = load_text(str(out_of_view_label_path), delimiter=',', dtype=np.float64, backend='numpy')
 
         target_visible = np.logical_and(full_occlusion == 0, out_of_view == 0)
 
-        frames_path = '{}/{}/{}/img'.format(self.base_path, class_name, sequence_name)
+        frames_path = '{}/{}/img'.format(self.base_path, sequence_name)
 
         frames_list = ['{}/{:08d}.jpg'.format(frames_path, frame_number) for frame_number in range(1, ground_truth_rect.shape[0] + 1)]
 

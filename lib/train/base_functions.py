@@ -36,6 +36,8 @@ def names2datasets(name_list: list, settings, image_loader):
             datasets.append(Got10k(settings.env.got10k_dir, split='vottrain', image_loader=image_loader))
         if name == "COCO17":
             datasets.append(MSCOCOSeq(settings.env.coco_dir, version="2017", image_loader=image_loader))
+        if name == "GOT10K_votval":
+            datasets.append(Got10k(settings.env.got10k_dir, split='votval', image_loader=image_loader))
         if name == "TRACKINGNET":
             datasets.append(TrackingNet(settings.env.trackingnet_dir, image_loader=image_loader))
     return datasets
@@ -50,6 +52,9 @@ def build_dataloaders(cfg, settings):
     transform_train = tfm.Transform(tfm.ToTensorAndJitter(0.2),
                                     tfm.RandomHorizontalFlip_Norm(probability=0.5),
                                     tfm.Normalize(mean=cfg.DATA.MEAN, std=cfg.DATA.STD))
+    
+    transform_val = tfm.Transform(tfm.ToTensor(),
+                                  tfm.Normalize(mean=cfg.DATA.MEAN, std=cfg.DATA.STD))
 
     # The tracking pairs processing module
     output_sz = settings.output_sz
@@ -63,6 +68,15 @@ def build_dataloaders(cfg, settings):
                                                        transform=transform_train,
                                                        joint_transform=transform_joint,
                                                        settings=settings)
+    
+    data_processing_val = processing.SiamTPNProcessing(search_area_factor=search_area_factor,
+                                                     output_sz=output_sz,
+                                                     center_jitter_factor=settings.center_jitter_factor,
+                                                     scale_jitter_factor=settings.scale_jitter_factor,
+                                                     mode='sequence',
+                                                     transform=transform_val,
+                                                     joint_transform=transform_joint,
+                                                     settings=settings)
 
     # Train sampler and loader
     settings.num_template = getattr(cfg.DATA.TEMPLATE, "NUMBER", 3)
@@ -84,7 +98,20 @@ def build_dataloaders(cfg, settings):
 
 
 
-    return loader_train
+    # Validation samplers and loaders
+    dataset_val = sampler.TrackingSampler(datasets=names2datasets(cfg.DATA.VAL.DATASETS_NAME, settings, opencv_loader),
+                                          p_datasets=cfg.DATA.VAL.DATASETS_RATIO,
+                                          samples_per_epoch=cfg.DATA.VAL.SAMPLE_PER_EPOCH,
+                                          max_gap=cfg.DATA.MAX_SAMPLE_INTERVAL, num_search_frames=settings.num_search,
+                                          num_template_frames=settings.num_template, processing=data_processing_val,
+                                          frame_sample_mode=sampler_mode)
+    val_sampler = DistributedSampler(dataset_val) if settings.local_rank != -1 else None
+    loader_val = LTRLoader('val', dataset_val, training=False, batch_size=cfg.TRAIN.BATCH_SIZE,
+                           num_workers=cfg.TRAIN.NUM_WORKER, drop_last=True, stack_dim=1, sampler=val_sampler,
+                           epoch_interval=cfg.TRAIN.VAL_EPOCH_INTERVAL)
+
+
+    return loader_train, loader_val
 
 
 def get_optimizer_scheduler(net, cfg):

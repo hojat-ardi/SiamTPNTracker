@@ -1,5 +1,15 @@
 MODEL:
   BACKBONE:
+  #   OUTPUT_STAGES:
+  #   - 3
+  #   - 4
+  #   - 5
+  #   TYPE: resnet18
+  #   # TYPE: resnet50
+  # HIDDEN_DIM: 
+  #   - 128
+  #   - 256
+  #   - 512
     OUTPUT_STAGES:
     - 2
     - 3
@@ -32,8 +42,8 @@ MODEL:
     WITH_ANCHORS: true
 TRAIN:
   BACKBONE_MULTIPLIER: 0.1
-  BATCH_SIZE: 32
-  EPOCH: 100
+  BATCH_SIZE: 128
+  EPOCH: 500
   FREEZE_LAYERS:
   - conv1
   ACTOR: TPNACTOR
@@ -52,6 +62,7 @@ TRAIN:
     TYPE: step
     DECAY_RATE: 0.1
   WEIGHT_DECAY: 0.00001
+  VAL_EPOCH_INTERVAL: 10
 DATA:
   MAX_SAMPLE_INTERVAL: 200
   MEAN:
@@ -75,16 +86,22 @@ DATA:
     NUMBER: 1
   TRAIN:
     DATASETS_NAME:
-    # - LASOT
+    - LASOT
+    - GOT10K_vottrain
     - COCO17
-    # - GOT10K_vottrain
-    # - TRACKINGNET
+    - TRACKINGNET
     DATASETS_RATIO:
     - 1
-    # - 1
-    # - 1
-    # - 1
+    - 1
+    - 1
+    - 1
     SAMPLE_PER_EPOCH: 60000
+  VAL:
+    DATASETS_NAME:
+    - GOT10K_votval
+    DATASETS_RATIO:
+    - 1
+    SAMPLE_PER_EPOCH: 10000
 TEST:
   EPOCH: 100
   SEARCH_FACTOR: 5.0

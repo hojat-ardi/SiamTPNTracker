@@ -5,13 +5,11 @@ from lib.test.utils.load_text import load_text
 
 class OTBDataset(BaseDataset):
     """ OTB-2015 dataset
-
     Publication:
         Object Tracking Benchmark
         Wu, Yi, Jongwoo Lim, and Ming-hsuan Yan
         TPAMI, 2015
         http://faculty.ucmerced.edu/mhyang/papers/pami15_tracking_benchmark.pdf
-
     Download the dataset from http://cvlab.hanyang.ac.kr/tracker_benchmark/index.html
     """
     def __init__(self):
@@ -157,7 +155,7 @@ class OTBDataset(BaseDataset):
              "object_class": "person"},
             {"name": "Human3", "path": "Human3/img", "startFrame": 1, "endFrame": 1698, "nz": 4, "ext": "jpg", "anno_path": "Human3/groundtruth_rect.txt",
              "object_class": "person"},
-            {"name": "Human4_2", "path": "Human4/img", "startFrame": 1, "endFrame": 667, "nz": 4, "ext": "jpg", "anno_path": "Human4/groundtruth_rect.2.txt",
+            {"name": "Human4_2", "path": "Human4-2/img", "startFrame": 1, "endFrame": 667, "nz": 4, "ext": "jpg", "anno_path": "Human4-2/groundtruth_rect.txt",
              "object_class": "person"},
             {"name": "Human5", "path": "Human5/img", "startFrame": 1, "endFrame": 713, "nz": 4, "ext": "jpg", "anno_path": "Human5/groundtruth_rect.txt",
              "object_class": "person"},
@@ -171,9 +169,9 @@ class OTBDataset(BaseDataset):
              "object_class": "person"},
             {"name": "Ironman", "path": "Ironman/img", "startFrame": 1, "endFrame": 166, "nz": 4, "ext": "jpg", "anno_path": "Ironman/groundtruth_rect.txt",
              "object_class": "person head"},
-            {"name": "Jogging_1", "path": "Jogging/img", "startFrame": 1, "endFrame": 307, "nz": 4, "ext": "jpg", "anno_path": "Jogging/groundtruth_rect.1.txt",
+            {"name": "Jogging_1", "path": "Jogging-1/img", "startFrame": 1, "endFrame": 307, "nz": 4, "ext": "jpg", "anno_path": "Jogging-1/groundtruth_rect.txt",
              "object_class": "person"},
-            {"name": "Jogging_2", "path": "Jogging/img", "startFrame": 1, "endFrame": 307, "nz": 4, "ext": "jpg", "anno_path": "Jogging/groundtruth_rect.2.txt",
+            {"name": "Jogging_2", "path": "Jogging-2/img", "startFrame": 1, "endFrame": 307, "nz": 4, "ext": "jpg", "anno_path": "Jogging-2/groundtruth_rect.txt",
              "object_class": "person"},
             {"name": "Jump", "path": "Jump/img", "startFrame": 1, "endFrame": 122, "nz": 4, "ext": "jpg", "anno_path": "Jump/groundtruth_rect.txt",
              "object_class": "person"},
@@ -213,9 +211,9 @@ class OTBDataset(BaseDataset):
              "object_class": "person"},
             {"name": "Skating1", "path": "Skating1/img", "startFrame": 1, "endFrame": 400, "nz": 4, "ext": "jpg", "anno_path": "Skating1/groundtruth_rect.txt",
              "object_class": "person"},
-            {"name": "Skating2_1", "path": "Skating2/img", "startFrame": 1, "endFrame": 473, "nz": 4, "ext": "jpg", "anno_path": "Skating2/groundtruth_rect.1.txt",
+            {"name": "Skating2_1", "path": "Skating2-1/img", "startFrame": 1, "endFrame": 473, "nz": 4, "ext": "jpg", "anno_path": "Skating2-1/groundtruth_rect.txt",
              "object_class": "person"},
-            {"name": "Skating2_2", "path": "Skating2/img", "startFrame": 1, "endFrame": 473, "nz": 4, "ext": "jpg", "anno_path": "Skating2/groundtruth_rect.2.txt",
+            {"name": "Skating2_2", "path": "Skating2-2/img", "startFrame": 1, "endFrame": 473, "nz": 4, "ext": "jpg", "anno_path": "Skating2-2/groundtruth_rect.txt",
              "object_class": "person"},
             {"name": "Skiing", "path": "Skiing/img", "startFrame": 1, "endFrame": 81, "nz": 4, "ext": "jpg", "anno_path": "Skiing/groundtruth_rect.txt",
              "object_class": "person"},

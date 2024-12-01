@@ -105,7 +105,7 @@ def run_training(config_name, cudnn_benchmark=True, local_rank=-1, save_dir=None
     settings.log_file = os.path.join(log_dir, "{}-{}.log".format(settings.config_name, int(time.time())))
 
     # Build dataloaders
-    loader_train = build_dataloaders(cfg, settings)
+    loader_train, loader_val = build_dataloaders(cfg, settings)
 
     # Create network
     net = build_network(cfg)
@@ -130,7 +130,7 @@ def run_training(config_name, cudnn_benchmark=True, local_rank=-1, save_dir=None
     # Optimizer, parameters, and learning rates
     optimizer, lr_scheduler = get_optimizer_scheduler(net, cfg)
 
-    trainer = LTRTrainer(actor, [loader_train], optimizer, settings, lr_scheduler)
+    trainer = LTRTrainer(actor, [loader_train, loader_val], optimizer, settings, lr_scheduler)
 
     # train process
     trainer.train(cfg.TRAIN.EPOCH, load_latest=True, fail_safe=True)
