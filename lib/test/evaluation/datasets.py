@@ -15,6 +15,17 @@ dataset_dict = dict(
     otb=DatasetInfo(module=pt % "otb", class_name="OTBDataset", kwargs=dict()),
     nfs=DatasetInfo(module=pt % "nfs", class_name="NFSDataset", kwargs=dict()),
     uav=DatasetInfo(module=pt % "uav", class_name="UAVDataset", kwargs=dict()),
+    uav123_10fps=DatasetInfo(module=pt % "uav123_10fps", class_name="UAV123_10fpsDataset", kwargs=dict(split='all') ),
+    uav20l=DatasetInfo(module=pt % "uav20l", class_name="UAV20LDataset", kwargs=dict()),
+    dtb70=DatasetInfo(module=pt % "dtb70", class_name="DTB70Dataset", kwargs=dict()),
+    uavtrack=DatasetInfo(module=pt % "uavtrack", class_name="UAVTrackDataset", kwargs=dict()),
+    visdrone=DatasetInfo(module=pt % "visdrone", class_name="VISDRONEDataset", kwargs=dict()),
+    uavdt=DatasetInfo(module=pt % "uavdt", class_name="UAVDTDataset", kwargs=dict()),
+    uavtrackl=DatasetInfo(module=pt % "uavtrackl", class_name="UAVTracklDataset", kwargs=dict()),
+
+
+
+
     vot=DatasetInfo(module=pt % "vot", class_name="VOTDataset", kwargs=dict())
 )
 

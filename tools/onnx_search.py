@@ -61,7 +61,7 @@ if __name__ == "__main__":
     # build the stark model
     model = build_network(cfg)
     # load checkpoint
-    checkpoint_name = os.path.join("results/checkpoints/train/shufflenet_l345_192/TransPatchTrack_ep0100.pth.tar")
+    checkpoint_name = os.path.join("results/checkpoints/train/shufflenet_l345_192/SiamTPN_ep0100.pth.tar")
     model.load_state_dict(torch.load(checkpoint_name, map_location='cpu')['net'], strict=False)
     model.eval()
     """ rebuild the inference-time model """

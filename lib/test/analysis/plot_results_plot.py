@@ -7,28 +7,127 @@ import pickle
 import json
 from lib.test.evaluation.environment import env_settings
 from lib.test.analysis.extract_results import extract_results
+import os
+import pickle
+import torch
+import matplotlib.pyplot as plt
+from lib.test.evaluation.environment import env_settings
+
+att_name = [
+    'Scale Variation', 'Aspect Ratio Change', 'Low Resolution', 'Fast Motion',
+    'Full Occlusion','Partial Occlusion', 'Out-of-View', 'Background Clutter',
+    'Illumination Variation', 'Viewpoint Change', 'Camera Motion', 'Similar Object'
+]
+
+att_fig_name = [
+    'SV', 'ARC', 'LR', 'FM', 'FOC' ,'POC', 
+    'OV', 'BC', 'IV', 'VC', 'CM', 'SOB'
+]
+
+def plot_attribute_wise_results(eval_data, att_all, trackers, plot_draw_styles, result_plot_path):
+    # این تابع را اضافه کنید
+    valid_sequence = torch.tensor(eval_data['valid_sequence'], dtype=torch.bool)
+    tracker_names = eval_data['trackers']
+    
+    ave_success_rate_plot_overlap = torch.tensor(eval_data['ave_success_rate_plot_overlap'])
+    ave_success_rate_plot_center = torch.tensor(eval_data['ave_success_rate_plot_center'])
+    ave_success_rate_plot_center_norm = torch.tensor(eval_data['ave_success_rate_plot_center_norm'])
+
+    threshold_set_overlap = torch.tensor(eval_data['threshold_set_overlap'])
+    threshold_set_center = torch.tensor(eval_data['threshold_set_center'])
+    threshold_set_center_norm = torch.tensor(eval_data['threshold_set_center_norm'])
+
+    # تابع‌های کمکی از قبل تعریف شده‌اند:
+    # get_auc_curve, get_prec_curve, plot_draw_save
+
+    # برای هر Attribute:
+    for att_idx, att_n in enumerate(att_name):
+        # فیلتر توالی‌ها بر اساس این Attribute
+        idx_seq_set = torch.where(torch.tensor(att_all[:, att_idx]) > 0)[0]
+        if len(idx_seq_set) < 2:
+            continue  # اگر کمتر از 2 توالی این ویژگی را داشته باشند، رد شوید
+
+        # ایجاد mask معتبر برای این attribute
+        valid_attribute = torch.zeros_like(valid_sequence, dtype=torch.bool)
+        valid_attribute[idx_seq_set] = True
+        valid_attribute = valid_sequence & valid_attribute
+
+        # محاسبه AUC برای success
+        auc_curve_attr, auc_attr = get_auc_curve(ave_success_rate_plot_overlap, valid_attribute)
+
+        success_plot_opts_attr = {
+            'plot_type': f'success_{att_fig_name[att_idx]}',
+            'legend_loc': 'lower left',
+            'xlabel': 'Overlap threshold',
+            'ylabel': 'Success rate',
+            'xlim': (0, 1.0),
+            'ylim': (0, 100),
+            'title': f'Success - {att_n} ({len(idx_seq_set)})'
+        }
+
+        plot_draw_save(auc_curve_attr, threshold_set_overlap, auc_attr, tracker_names, plot_draw_styles, result_plot_path,
+                       success_plot_opts_attr)
+
+        # محاسبه Precision
+        prec_curve_attr, prec_score_attr = get_prec_curve(ave_success_rate_plot_center, valid_attribute)
+
+        precision_plot_opts_attr = {
+            'plot_type': f'precision_{att_fig_name[att_idx]}',
+            'legend_loc': 'lower right',
+            'xlabel': 'Location error threshold',
+            'ylabel': 'Precision',
+            'xlim': (0, 50),
+            'ylim': (0, 100),
+            'title': f'Precision - {att_n} ({len(idx_seq_set)})'
+        }
+
+        plot_draw_save(prec_curve_attr, threshold_set_center, prec_score_attr, tracker_names, plot_draw_styles, result_plot_path,
+                       precision_plot_opts_attr)
+
+        # محاسبه Normalized Precision
+        prec_curve_norm_attr, prec_score_norm_attr = get_prec_curve(ave_success_rate_plot_center_norm, valid_attribute)
+        norm_precision_plot_opts_attr = {
+            'plot_type': f'norm_precision_{att_fig_name[att_idx]}',
+            'legend_loc': 'lower right',
+            'xlabel': 'Location error threshold',
+            'ylabel': 'Precision',
+            'xlim': (0, 0.5),
+            'ylim': (0, 100),
+            'title': f'Normalized~Precision - {att_n} ({len(idx_seq_set)})'
+        }
+
+        plot_draw_save(prec_curve_norm_attr, threshold_set_center_norm, prec_score_norm_attr, tracker_names, plot_draw_styles, result_plot_path,
+                       norm_precision_plot_opts_attr)
+
+
 
 
 def get_plot_draw_styles():
-    plot_draw_style = [{'color': (1.0, 0.0, 0.0), 'line_style': '-'},
-                       {'color': (0.0, 1.0, 0.0), 'line_style': '-'},
-                       {'color': (0.0, 0.0, 1.0), 'line_style': '-'},
-                       {'color': (0.0, 0.0, 0.0), 'line_style': '-'},
-                       {'color': (1.0, 0.0, 1.0), 'line_style': '-'},
-                       {'color': (0.0, 1.0, 1.0), 'line_style': '-'},
-                       {'color': (0.5, 0.5, 0.5), 'line_style': '-'},
-                       {'color': (136.0 / 255.0, 0.0, 21.0 / 255.0), 'line_style': '-'},
-                       {'color': (1.0, 127.0 / 255.0, 39.0 / 255.0), 'line_style': '-'},
-                       {'color': (0.0, 162.0 / 255.0, 232.0 / 255.0), 'line_style': '-'},
-                       {'color': (0.0, 0.5, 0.0), 'line_style': '-'},
-                       {'color': (1.0, 0.5, 0.2), 'line_style': '-'},
-                       {'color': (0.1, 0.4, 0.0), 'line_style': '-'},
-                       {'color': (0.6, 0.3, 0.9), 'line_style': '-'},
-                       {'color': (0.4, 0.7, 0.1), 'line_style': '-'},
-                       {'color': (0.2, 0.1, 0.7), 'line_style': '-'},
-                       {'color': (0.7, 0.6, 0.2), 'line_style': '-'}]
+    """
+    Generate plot styles with warm and bold colors.
+    """
+    plot_draw_style = [
+        {'color': (0.8, 0.0, 0.0), 'line_style': '-'},   # Bold Red
+        {'color': (0.0, 0.8, 0.0), 'line_style': '-'},   # Bold Green
+        {'color': (0.0, 0.0, 0.8), 'line_style': '-'},   # Bold Blue
+        {'color': (0.8, 0.4, 0.0), 'line_style': '-'},   # Warm Orange
+        {'color': (0.8, 0.8, 0.0), 'line_style': '-'},   # Bold Yellow
+        {'color': (0.6, 0.0, 0.6), 'line_style': '-'},   # Deep Purple
+        {'color': (0.8, 0.0, 0.4), 'line_style': '-'},   # Magenta
+        {'color': (0.4, 0.2, 0.0), 'line_style': '--'},  # Dark Brown
+        {'color': (0.4, 0.8, 0.4), 'line_style': '--'},  # Light Green
+        {'color': (0.2, 0.6, 0.8), 'line_style': '--'},  # Teal
+        {'color': (0.8, 0.4, 0.6), 'line_style': '-.'},  # Rose Pink
+        {'color': (0.8, 0.6, 0.0), 'line_style': '-.'},  # Golden Yellow
+        {'color': (0.6, 0.0, 0.2), 'line_style': ':'},   # Crimson Red
+        {'color': (0.0, 0.6, 0.6), 'line_style': ':'},   # Deep Cyan
+        {'color': (0.6, 0.3, 0.3), 'line_style': '-.'},  # Soft Red
+        {'color': (0.6, 0.6, 0.2), 'line_style': '-'},   # Olive Green
+        {'color': (0.2, 0.2, 0.6), 'line_style': '-'},   # Indigo
+    ]
 
     return plot_draw_style
+
 
 
 def check_eval_data_is_valid(eval_data, trackers, dataset):
@@ -100,72 +199,90 @@ def get_tracker_display_name(tracker):
 
 
 def plot_draw_save(y, x, scores, trackers, plot_draw_styles, result_plot_path, plot_opts):
-    plt.rcParams['text.usetex']=True
+    """
+    Plot and save the graph with given styles and options.
+    """
+    plt.rcParams['text.usetex'] = True
     plt.rcParams["font.family"] = "Times New Roman"
+
     # Plot settings
-    font_size = plot_opts.get('font_size', 20)
-    font_size_axis = plot_opts.get('font_size_axis', 20)
-    line_width = plot_opts.get('line_width', 2)
-    font_size_legend = plot_opts.get('font_size_legend', 20)
+    font_size = plot_opts.get('font_size', 28)
+    font_size_axis = plot_opts.get('font_size_axis', 36)
+    font_size_legend = plot_opts.get('font_size_legend', 30)
+    line_width = plot_opts.get('line_width', 6)
 
     plot_type = plot_opts['plot_type']
     legend_loc = plot_opts['legend_loc']
-
     xlabel = plot_opts['xlabel']
-    ylabel = plot_opts['ylabel']
-    ylabel = "%s"%(ylabel.replace('%','\%'))
+    ylabel = "%s" % (plot_opts['ylabel'].replace('%', '\%'))
     xlim = plot_opts['xlim']
     ylim = plot_opts['ylim']
-
-    title = r"$\bf{%s}$" %(plot_opts['title'])
+    title = r"$\bf{%s}$" % (plot_opts['title'])
 
     matplotlib.rcParams.update({'font.size': font_size})
     matplotlib.rcParams.update({'axes.titlesize': font_size_axis})
-    matplotlib.rcParams.update({'axes.titleweight': 'black'})
+    matplotlib.rcParams.update({'axes.titleweight': 'bold'})
     matplotlib.rcParams.update({'axes.labelsize': font_size_axis})
+    matplotlib.rcParams.update({'axes.labelweight': 'bold'})
 
-    fig, ax = plt.subplots()
+    # Increase plot figure size
+    fig, ax = plt.subplots(figsize=(18, 10))
 
+    # Sort data for plotting
     index_sort = scores.argsort(descending=False)
-
     plotted_lines = []
     legend_text = []
 
+    # Plot lines with styles
     for id, id_sort in enumerate(index_sort):
-        line = ax.plot(x.tolist(), y[id_sort, :].tolist(),
-                       linewidth=line_width,
-                       color=plot_draw_styles[index_sort.numel() - id - 1]['color'],
-                       linestyle=plot_draw_styles[index_sort.numel() - id - 1]['line_style'])
-
+        style_index = index_sort.numel() - id - 1
+        line = ax.plot(
+            x.tolist(), y[id_sort, :].tolist(),
+            linewidth=line_width,
+            color=plot_draw_styles[style_index]['color'],
+            linestyle=plot_draw_styles[style_index]['line_style']
+        )
         plotted_lines.append(line[0])
-
         tracker = trackers[id_sort]
         disp_name = get_tracker_display_name(tracker)
-
         legend_text.append('{} [{:.1f}]'.format(disp_name, scores[id_sort]))
 
+    # Add bold font for the top method
     try:
-        # add bold to our method
-        for i in range(1,2):
-            legend_text[-i] = r'\textbf{%s}'%(legend_text[-i])
+        for i in range(1, 2):
+            legend_text[-i] = r'\textbf{%s}' % (legend_text[-i])
 
-        ax.legend(plotted_lines[::-1], legend_text[::-1], loc=legend_loc, fancybox=False, edgecolor='black',
-                  fontsize=font_size_legend, framealpha=1.0)
-    except:
-        pass
+        # Place legend outside the plot with increased font size and bold weight
+        ax.legend(
+            plotted_lines[::-1], legend_text[::-1],
+            loc='upper left', bbox_to_anchor=(1, 1),
+            fancybox=True, edgecolor='black',
+            fontsize=font_size_legend, framealpha=1.0,
+            prop={'weight': 'bold'}  # پررنگ‌تر کردن متن Legend
+        )
+    except Exception as e:
+        print(f"Error in legend: {e}")
 
-    ax.set(xlabel=xlabel,
-           ylabel=ylabel,
-           xlim=xlim, ylim=ylim,
-           title=title)
+    # Set labels, limits, and title with bold font
+    ax.set(
+        xlabel=xlabel,
+        ylabel=ylabel,
+        xlim=xlim,
+        ylim=ylim,
+        title=title
+    )
 
-    ax.grid(True, linestyle='-.')
+    # Improve grid appearance
+    ax.grid(True, linestyle='-.', alpha=0.7)
+
+    # Save plot as PNG and PDF
     fig.tight_layout()
-
-    plt.savefig('{}/{}_plot.png'.format(result_plot_path, plot_type))
+    plt.savefig(f'{result_plot_path}/{plot_type}_plot.png', dpi=300)
     plt.savefig('{}/{}_plot.svg'.format(result_plot_path, plot_type))
-    fig.savefig('{}/{}_plot.pdf'.format(result_plot_path, plot_type), dpi=300, format='pdf', transparent=True)
-    plt.draw()
+    fig.savefig(f'{result_plot_path}/{plot_type}_plot.pdf', dpi=300, format='pdf', transparent=True)
+    plt.show()
+
+
 
 
 def check_and_load_precomputed_results(trackers, dataset, report_name, force_evaluation=False, **kwargs):
@@ -256,7 +373,7 @@ def plot_results(trackers, dataset, report_name, merge_results=False,
         threshold_set_overlap = torch.tensor(eval_data['threshold_set_overlap'])
 
         success_plot_opts = {'plot_type': 'success', 'legend_loc': 'lower left', 'xlabel': 'Overlap threshold',
-                             'ylabel': 'Overlap Precision [%]', 'xlim': (0, 1.0), 'ylim': (0, 88), 'title': 'Success'}
+                             'ylabel': 'Success rate', 'xlim': (0, 1.0), 'ylim': (0, 90), 'title': 'Success~plots~on~UAV123'}
         plot_draw_save(auc_curve, threshold_set_overlap, auc, tracker_names, plot_draw_styles, result_plot_path, success_plot_opts)
 
     # ********************************  Precision Plot **************************************
@@ -268,8 +385,8 @@ def plot_results(trackers, dataset, report_name, merge_results=False,
         threshold_set_center = torch.tensor(eval_data['threshold_set_center'])
 
         precision_plot_opts = {'plot_type': 'precision', 'legend_loc': 'lower right',
-                               'xlabel': 'Location error threshold [pixels]', 'ylabel': 'Distance Precision [%]',
-                               'xlim': (0, 50), 'ylim': (0, 100), 'title': 'Precision plot'}
+                               'xlabel': 'Location error threshold', 'ylabel': 'Precision',
+                               'xlim': (0, 50), 'ylim': (0, 100), 'title': 'Precision~plots~on~UAV123'}
         plot_draw_save(prec_curve, threshold_set_center, prec_score, tracker_names, plot_draw_styles, result_plot_path,
                        precision_plot_opts)
 
@@ -282,10 +399,20 @@ def plot_results(trackers, dataset, report_name, merge_results=False,
         threshold_set_center_norm = torch.tensor(eval_data['threshold_set_center_norm'])
 
         norm_precision_plot_opts = {'plot_type': 'norm_precision', 'legend_loc': 'lower right',
-                                    'xlabel': 'Location error threshold', 'ylabel': 'Distance Precision [%]',
-                                    'xlim': (0, 0.5), 'ylim': (0, 85), 'title': 'Normalized Precision'}
+                                    'xlabel': 'Location error threshold', 'ylabel': 'Precision',
+                                    'xlim': (0, 0.5), 'ylim': (0, 100), 'title': 'Norm-Precision~plots~on~UAV123'}
         plot_draw_save(prec_curve, threshold_set_center_norm, prec_score, tracker_names, plot_draw_styles, result_plot_path,
                        norm_precision_plot_opts)
+
+    att_all_path = 'att_all.pkl'  # مسیر را مطابق با جایی که در code1 ذخیره کردید اصلاح کنید
+    if os.path.isfile(att_all_path):
+        with open(att_all_path, 'rb') as f:
+            att_all = pickle.load(f)
+        
+        # حالا نمودارهای Attributeمحور را هم رسم کنید:
+        plot_attribute_wise_results(eval_data, att_all, tracker_names, plot_draw_styles, result_plot_path)
+    else:
+        print("Attribute file (att_all.pkl) not found. Skipping attribute-based plots.")
 
     plt.show()
 

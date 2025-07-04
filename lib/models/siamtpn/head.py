@@ -65,10 +65,17 @@ class PatchHead(nn.Module):
 
 
     def forward(self, feat, kernel):
+        # print("feat:",feat.shape)
+        # print("kernel:",kernel.shape)
+
         feat = xcorr_depthwise(feat, kernel)
+        print("feat:",feat.shape)
+        # print("kernel:",kernel.shape)
         B, C, H, W = feat.shape
         pred_cls = self.cls_head(feat).permute(0, 2, 3, 1).reshape(-1, 2)
+        print("pred_cls",pred_cls.shape)
         pred_box = self.box_head(feat).permute(0, 2, 3, 1).reshape(B, -1, 4)
+        print("pred_box",pred_box.shape)
         return pred_cls, F.relu(pred_box)
     
 

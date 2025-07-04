@@ -24,13 +24,21 @@ def _save_tracker_output(seq: Sequence, tracker: Tracker, output: dict):
         base_results_path = os.path.join(tracker.results_dir, seq.name)
 
     def save_bb(file, data):
-        tracked_bb = np.array(data).astype(int)
-        np.savetxt(file, tracked_bb, delimiter='\t', fmt='%d')
+        # print(data)
+        tracked_bb = np.array(data).astype(float)
+        # print(tracked_bb)
+        np.savetxt(file, tracked_bb, delimiter=',', fmt='%.2f')
 
-    def save_time(file, data):
-        exec_times = np.array(data).astype(float)
-        np.savetxt(file, exec_times, delimiter='\t', fmt='%f')
+    # def save_time(file, data):
+    #     exec_times = np.array(data).astype(float)
+    #     np.savetxt(file, exec_times, delimiter='\t', fmt='%f')
 
+    def save_time(file, fps_data):
+    # Convert fps data to frame durations
+    # The duration of a frame is 1/FPS, but for the first frame, it's considered as 0
+        frame_durations = [0] + [1.0 / f for f in fps_data[1:]]  # Skip the first frame for calculation
+        exec_times = np.array(frame_durations).astype(float)
+        np.savetxt(file, exec_times, delimiter='\t', fmt='%.5f')  # Save with three decimal places for precision
     def save_score(file, data):
         scores = np.array(data).astype(float)
         np.savetxt(file, scores, delimiter='\t', fmt='%.2f')

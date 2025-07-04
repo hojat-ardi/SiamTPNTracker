@@ -20,6 +20,13 @@ class EnvSettings:
         self.trackingnet_path = ''
         self.davis_dir = ''
         self.youtubevos_dir = ''
+        self.uavtrack_path = ''
+        self.uavdt_path = ''
+        self.uav123_10fps_path = ''
+        self.uav20l_path = ''
+        self.dtb70_path = ''
+        self.visdrone_path = ''
+        self.uavtrackl_path = ''
 
         self.got_packed_results_path = ''
         self.got_reports_path = ''

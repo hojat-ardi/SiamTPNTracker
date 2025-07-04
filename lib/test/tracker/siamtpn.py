@@ -10,7 +10,6 @@ from lib.models.siamtpn.track  import build_network
 from lib.test.tracker.utils import Preprocessor
 from lib.utils.box_ops import clip_box
 
-
 class SiamTPN(BaseTracker):
     def __init__(self, params):
         super(SiamTPN, self).__init__(params)
@@ -44,13 +43,13 @@ class SiamTPN(BaseTracker):
         self.state = info['init_bbox']
         self.frame_id = 0
 
-
     def track(self, image, info: dict = None):
         H, W, _ = image.shape
         self.frame_id += 1
         
         x_patch_arr, resize_factor, x_amask_arr = sample_target(image, self.state, self.params.search_factor,
-                                                                output_sz=self.params.search_size)  # (x1, y1, w, h)
+                                                                output_sz=self.params.search_size
+        )  # (x1, y1, w, h)
 
         search = self.preprocessor.process(x_patch_arr, x_amask_arr)
 
